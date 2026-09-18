@@ -259,15 +259,35 @@ namespace Esperecyan.Unity.VRMConverterForVRChat.VRChatToVRM
             if (settings.eyesLookingUp != null && settings.eyesLookingDown != null
                 && settings.eyesLookingLeft != null && settings.eyesLookingRight != null)
             {
-                lookAtBoneApplyer.VerticalUp.CurveYRangeDegree
-                    = Math.Min(-settings.eyesLookingUp.left.x, -settings.eyesLookingUp.right.x);
-                lookAtBoneApplyer.VerticalDown.CurveYRangeDegree
-                    = Math.Min(settings.eyesLookingDown.left.x, settings.eyesLookingDown.right.x);
-                lookAtBoneApplyer.HorizontalOuter.CurveYRangeDegree
-                    = Math.Min(-settings.eyesLookingLeft.left.y, settings.eyesLookingRight.right.y);
-                lookAtBoneApplyer.HorizontalInner.CurveYRangeDegree
-                    = Math.Min(-settings.eyesLookingLeft.right.y, settings.eyesLookingRight.left.y);
+                // EyeRotationsはQuaternionなので、成分をそのまま度として扱わず、オイラー角 (度) に変換する
+                // (成分をそのまま使うと、10度の回転が sin(5°) ≒ 0.087 度になり、瞳がほとんど動かなくなる)
+                lookAtBoneApplyer.VerticalUp.CurveYRangeDegree = Math.Min(
+                    -VRChatToVRMConverter.ToSignedDegrees(settings.eyesLookingUp.left.eulerAngles.x),
+                    -VRChatToVRMConverter.ToSignedDegrees(settings.eyesLookingUp.right.eulerAngles.x)
+                );
+                lookAtBoneApplyer.VerticalDown.CurveYRangeDegree = Math.Min(
+                    VRChatToVRMConverter.ToSignedDegrees(settings.eyesLookingDown.left.eulerAngles.x),
+                    VRChatToVRMConverter.ToSignedDegrees(settings.eyesLookingDown.right.eulerAngles.x)
+                );
+                lookAtBoneApplyer.HorizontalOuter.CurveYRangeDegree = Math.Min(
+                    -VRChatToVRMConverter.ToSignedDegrees(settings.eyesLookingLeft.left.eulerAngles.y),
+                    VRChatToVRMConverter.ToSignedDegrees(settings.eyesLookingRight.right.eulerAngles.y)
+                );
+                lookAtBoneApplyer.HorizontalInner.CurveYRangeDegree = Math.Min(
+                    -VRChatToVRMConverter.ToSignedDegrees(settings.eyesLookingLeft.right.eulerAngles.y),
+                    VRChatToVRMConverter.ToSignedDegrees(settings.eyesLookingRight.left.eulerAngles.y)
+                );
             }
+        }
+
+        /// <summary>
+        /// <see cref="Quaternion.eulerAngles"/>の成分 (0〜360度) を、-180〜180度の範囲に変換します。
+        /// </summary>
+        /// <param name="eulerAngle"></param>
+        /// <returns></returns>
+        private static float ToSignedDegrees(float eulerAngle)
+        {
+            return Mathf.DeltaAngle(0, eulerAngle);
         }
 
         /// <summary>
